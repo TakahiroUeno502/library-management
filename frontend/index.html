@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>図書館管理システム</title>
+</head>
+<body>
+    <h1>出版社管理</h1>
+
+    <h2>出版社登録</h2>
+    <input type="text" id="publisher-name" placeholder="出版社名">
+    <button id="register-button">登録</button>
+
+    <h2>出版社一覧</h2>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>出版社名</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="publisher-list">
+        </tbody>
+    </table>
+	<script>
+		fetch('/api/publishers')
+		.then(response => response.json())
+		.then(publishers => {
+			const tbody = document.getElementById('publisher-list');
+			publishers.forEach(publisher => {
+				const tr = document.createElement('tr');
+				tr.innerHTML = `
+					<td>${publisher.id}</td>
+					<td>${publisher.name}</td>
+					<td>
+						<button class="edit-button" data-id="${publisher.id}" data-name="${publisher.name}">
+							編集
+						</button>
+						<button class="delete-button" data-id="${publisher.id}">
+							削除
+						</button>
+					</td>
+				`;
+				tbody.appendChild(tr);
+				tr.querySelector('.edit-button').addEventListener('click',()=>{
+					const newName = prompt('新しい出版社名を入力してください',publisher.name);
+					if(newName === null){
+						return;
+					}
+					fetch(`/api/publishers/${publisher.id}`,{
+						method: 'PUT',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({
+							name: newName
+						})
+					})
+					.then(response => response.json())
+					.then(() => {
+						location.reload();
+					});
+				});
+
+				tr.querySelector('.delete-button').addEventListener('click',()=>{
+					const result = confirm(`${publisher.name}を削除しますか？`);
+					if(!result){
+						return;
+					}
+					fetch(`/api/publishers/${publisher.id}`,{
+						method: 'DELETE',
+					})
+					.then(response => response.json())
+					.then(() => {
+						location.reload();
+					});
+				});
+			});
+		});
+
+		document.getElementById('register-button').addEventListener('click',()=>{
+			const name = document.getElementById('publisher-name').value;
+			fetch('/api/publishers',{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					name: name
+				})
+			})
+			.then(response => response.json())
+			.then(()=>{
+				location.reload();
+			});
+		});
+	</script>
+</body>
+</html>
